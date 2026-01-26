@@ -1,0 +1,87 @@
+.page {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 24px 16px 60px;
+}
+
+.card {
+    border: 1px solid var(--border);
+    background: var(--panel);
+    border-radius: 14px;
+    padding: 16px;
+    backdrop-filter: blur(6px);
+}
+
+.title {
+    border: 1px solid var(--border);
+    background: var(--panel);
+    border-radius: 14px;
+    padding: 16px;
+    backdrop-filter: blur(6px);
+}
+
+.title {
+    margin: 0 0 12px;
+}
+
+.form {
+    display: grid;
+    gap: 12px;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.label {
+    color: var(--muted);
+    font-size: 0.95rem;
+    margin-left: 4px;
+}
+
+.input,
+.textarea {
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: rgba(0, 0, 0, 0.25);
+    color: var(--text);
+}
+
+.textarea {
+    min-height: 90px;
+    resize: vertical;
+}
+
+.actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-top: 6px;
+}
+
+.button {
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.button:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.status {
+    margin-top: 12px;
+    color: var(--muted);
+}
+
