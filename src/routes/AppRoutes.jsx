@@ -14,7 +14,8 @@ export default function AppRoutes ({
     onDestroySpacecraft,
     onSendSpacecraftToPlanet, 
     onRefreshAll,
-    error
+    error,
+    isLoading
     }) {
 
 
@@ -35,7 +36,19 @@ export default function AppRoutes ({
                    element={<ConstructionPage onRefreshAll={onRefreshAll}/>}
                    />
 
-            <Route path="/spacecrafts/:spacecraftId" element={<SpacecraftPage />} />
+            <Route path="/spacecrafts/:spacecraftId" 
+              element={
+                <SpacecraftPage
+                    spacecrafts = {spacecrafts}
+                    planets = {planets}
+                    onDestroySpacecraft = {onDestroySpacecraft}
+                    onSendSpacecraftToPlanet = {onSendSpacecraftToPlanet}
+                    onRefreshAll = {onRefreshAll}
+                    error = {error}
+                    isLoading = {isLoading}
+                 />
+              } 
+           />
 
             <Route path="/planets" element={
                 <PlanetsPage

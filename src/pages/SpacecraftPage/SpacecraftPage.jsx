@@ -1,72 +1,150 @@
-import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import spaceTravelService from '../../services/spaceTravelService.js';
+import { useMemo, useState } from 'react';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import Loading from '../../components/Loading/Loading.jsx';
 import SpaceCraftCard from '../../components/SpacecraftCard/SpacecraftCard.jsx';
 
 import styles from "./SpacecraftPage.module.css";
 
 
-export default function SpacecraftPage () {
+export default function SpacecraftPage  ({
+    spacecrafts = [],
+    planets = [],
+    onDestroySpacecraft,
+    onSendSpacecraftToPlanet,
+    error,
+    isLoading: isAppLoading,
+})
+
+{
+    const navigate = useNavigate();
     const { spacecraftId } = useParams();
 
-    const [spacecraft, setSpacecraft] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isError, setIsError] = useState(false);
+    const [targetPlanetId, setTargetPlanetId] = useState('');
+    const [submitError, setSubmitError] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    useEffect(() => {
-        async function loadSpacecraft () {
-          try{
-            const response = await spaceTravelService.getSpacecrafts();
+    const spacecraft = useMemo(() => {
+        const list = Array.isArray(spacecrafts) ? spacecrafts : [];
+        return list.find((sc) => String(sc.id) === String(spacecraftId)) ?? null;
+    }, [spacecrafts, spacecraftId]);
 
-            if (response.isError) {
-                setIsError(true);
-                return;
-            }   
+    if (isAppLoading) return <Loading />;
 
-        const list = Array.isArray (response.data) ? response.data : [];
+    if (!spacecraft) {
+        return (
+            <div>
+                <p>Spacecraft not found.</p>
+                <Link to="/spacecrafts" className={styles.backLink}>
+                    Back to List
+                </Link>
+            </div>
+        );
+    }
 
-        const found = list.find( (sc) => String(sc.id) === String(spacecraftId) );
-        
-        if (!found) {
-            setIsError(true);
-        } else {
-            setSpacecraft (found);
-        }
+    const currentPlanet = planets.find(
+    (p) => Number(p.id) === Number(spacecraft.currentLocation)
+    );
 
-        setIsLoading(false);
+    async function handleDecommission() {
+        setSubmitError(null);
 
+        const ok = window.confirm (
+        `Decommission "${spacecraft.name}"? This action cannot be undone.`);
+        if (!ok) return;
+
+    try {
+        await onDestroySpacecraft?.(spacecraft.id);
+        navigate('/spacecrafts');
     } catch (error) {
-        console.log('Error fetching spacecraft:', error);
-        setIsError(true);
-        setIsLoading (false);
+        setSubmitError(error?.message ?? String(error));
     }
 }
 
-    loadSpacecraft();
-    }, [spacecraftId]);
+function validateDispatch() {
+    if (!targetPlanetId) return "Select a planet";
+    if (Number(targetPlanetId) === Number(spacecraft.planetId)) {
+        return "Spacecraft is already on this planet";
+    }
+    return null;
+}
 
+async function handleDispatch(e) {
+    e.preventDefault();
+    setSubmitError(null);
 
-
-    if (isLoading)  return <Loading />;
-
-    if (isError || !spacecraft) {
-        return <p>Spacecraft not found.</p>;
+    const validationMsg = validateDispatch();
+    if (validationMsg) {
+        setSubmitError(validationMsg);
+        return;
     }
 
-
+    try {
+        setIsSubmitting(true);
+        await onSendSpacecraftToPlanet?.(spacecraft.id, targetPlanetId);
+        setTargetPlanetId('');
+    } catch (error2) {
+        setSubmitError(error2?.message ?? String(error2));
+    } finally {
+        setIsSubmitting(false);
+    }
+}
 
   return (
     <div>
       <h4>{spacecraft.name}</h4>
       <SpaceCraftCard spacecraft={spacecraft} showDetailsLink={false} />
 
+      {error && <p className="error">Error: {String(error)}</p>}
+      {submitError && <p className="error">Error: {String(submitError)}</p>}
+
+    <p>
+        Currently at: {""} 
+        {currentPlanet ? currentPlanet.name : `Planet #${spacecraft.currentLocation}`}
+    </p>
+
+    <div className={styles.actions}>
+      <form onSubmit={handleDispatch} className={styles.dispatchRow}>
+      <label className={styles.label}>
+        Send to planet:
+        </label>
+
+        <select 
+            className={styles.select}
+            value={targetPlanetId}
+            onChange={(e) => setTargetPlanetId(e.target.value)}
+            disabled={isSubmitting}
+        >
+            <option value="">--Select a planet--</option>
+            {planets.map((planet) => (
+                <option key={planet.id} value={planet.id}>
+                    {planet.name}
+                </option>
+            ))}
+        </select>
+    
+
+      <button 
+        type="submit" 
+        className={styles.primaryBtn} 
+        disabled={isSubmitting || !targetPlanetId}
+        >
+            {isSubmitting ? "Sending..." : "Send"}
+      </button>
+    </form>
+
+     <button type="button" className={styles.dangerBtn} 
+             onClick={handleDecommission} disabled={isSubmitting}>
+             Decommission Spacecraft
+      </button>
+
+      {submitError && <p className={styles.error}>{submitError}</p>}
+
       <Link to="/spacecrafts" className={styles.backLink}>
         Back to List
       </Link>
-    </div>
+   </div>
 
-
+   </div>
   );
 }
 

@@ -7,6 +7,7 @@ export default function PlanetCard ({
     selectedSpacecraftId,
     onSelectSpacecraft,
     onSendSpacecraft,
+    isLoading,
 }) {
 
     return (
@@ -52,6 +53,7 @@ export default function PlanetCard ({
                 className={styles.select}
                     value={selectedSpacecraftId}
                     onChange={(e) => onSelectSpacecraft(planet.id, e.target.value)}
+                    disabled={isLoading}
                 >
 
                 <option value="">Select Spacecraft</option>
@@ -63,11 +65,11 @@ export default function PlanetCard ({
                 </select>
 
                 <button   
-                className="assign-button"
-                disabled={!selectedSpacecraftId}
+                className={styles.assignButton}
+                disabled={isLoading || !selectedSpacecraftId}
                 onClick={() => onSendSpacecraft(selectedSpacecraftId, planet.id)}
                 >
-                Send to {planet.name}
+                {isLoading ? "Updating..." : `Send to ${planet.name}`}
                 </button>
             </div>
         </div>

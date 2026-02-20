@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from "react-router-dom";
 import Nav from './components/Nav/Nav';
 import AppRoutes from './routes/AppRoutes';
 import SpaceTravelMockApi from './services/SpaceTravelMockApi';
@@ -8,38 +9,31 @@ export default function App() {
   const [spacecrafts, setSpacecrafts] = useState([]);
   const [error, setError] = useState(null);
 
+  const [lastSend, setLastSend] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const location = useLocation();
+
   useEffect(() => {
-    async function load () {
+    refreshAll();
+     }, []);
+
+    useEffect(() => {
       setError(null);
-
-       const planetRes = await SpaceTravelMockApi.getPlanets();
-    if (planetRes.isError) {
-      setError(planetRes.data);
-      return;
-    }
-
-    const scResp = await SpaceTravelMockApi.getSpacecrafts();
-    if (scResp.isError) {
-      setError(scResp.data);
-      return;
-    }
-
-    setPlanets(planetRes.data);
-    setSpacecrafts(scResp.data);
-    }
-
-    load();
-  }, []);
+      }, [location.pathname]);
   
-  
+  const DEBUG = import.meta.env.DEV;
   async function refreshAll() {
+    setIsLoading(true);
     setError(null);
 
+    try {
     const planetRes = await SpaceTravelMockApi.getPlanets();
     if (planetRes.isError) {
       setError(planetRes.data);
       return;
     }
+  
 
     const scResp = await SpaceTravelMockApi.getSpacecrafts();
     if (scResp.isError) {
@@ -49,7 +43,30 @@ export default function App() {
 
     setPlanets(planetRes.data);
     setSpacecrafts(scResp.data);
+
+  
+   if (DEBUG) {
+    console.log("PLANETS AFTER REFRESH:", planetRes.data.map(p => ({
+    id: p.id, pop: p.currentPopulation}))
+  );
+
+   console.log("SPACECRAFT AFTER REFRESH:", scResp.data.map(sc => ({
+   id: sc.id, loc: sc.currentLocation}))
+  );
+    
+  if (lastSend) {
+  const sc = scResp.data.find(
+    s => String(s.id) === String(lastSend.spacecraftId)
+  );
+  console.log("LAST SEND CHECK:", lastSend, "=> spacecraft now:", sc?.currentLocation);
   }
+}
+
+    } finally {
+      setIsLoading(false);
+    }
+ 
+}
 
 async function handleDestroySpacecraft(id) {
     setError(null);
@@ -60,23 +77,34 @@ async function handleDestroySpacecraft(id) {
       return;
     }
 
-    setSpacecrafts((prev) => {
-    const next = prev.filter((sc) => sc.id !== id);
-    console.log("Deleting ID:", id);
-    console.log("Before:", prev.map(s => s.id));
-    console.log("After:", next.map(s => s.id));
-    return next;
-});
+    setSpacecrafts((prev) => 
+      prev.filter((sc) => sc.id !== id));
+    
+
+    await refreshAll();
 
   }
 
   async function handleSendSpacecraftToPlanet(spacecraftId, targetPlanetId) {
     setError(null);
 
+    const  targetIdNum = Number(targetPlanetId);
+    setLastSend({ spacecraftId, targetPlanetId: targetIdNum });
+
+    if (DEBUG) {
+      console.log("SEND CALLED:", {
+        spacecraftId, 
+        targetPlanetId, 
+        type: typeof targetIdNum});
+    }
+
+    
     const sendResp = await SpaceTravelMockApi.sendSpacecraftToPlanet({
       spacecraftId, 
-      targetPlanetId,
+      targetPlanetId: targetIdNum,
     });
+
+    if (DEBUG) console.log("SEND RESPONSE:", sendResp);
 
     if (sendResp.isError) {
       setError(sendResp.data);
@@ -102,6 +130,7 @@ async function handleDestroySpacecraft(id) {
        onSendSpacecraftToPlanet={handleSendSpacecraftToPlanet}
        onRefreshAll={refreshAll}
        error={error}
+       isLoading={isLoading}
         />
                 
    </div>
@@ -114,8 +143,7 @@ Refer to spaceTravelService.js
 
 General Architecture-
 This file serves as the root component and central orchestration layer for the app.  
-State (for planets, spacecraft, error handling) lives here and coordinates how data and handler
-functions are passed into the app.
+State lives here and coordinates how data and handler functions are passed into the app.
 
 App.jsx uses useEffect to perform side effects of external interactions 
 (data fetching, subscriptions and DOM manipulation) and clean up functions.  This keeps

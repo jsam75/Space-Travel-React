@@ -6,6 +6,7 @@ export default function PlanetsPage ({
     spacecrafts = [],
     onSendSpacecraftToPlanet,
     error,
+    isLoading
 }) {
     const [selectByPlanet, setSelectByPlanet] = useState({});
 
@@ -16,14 +17,22 @@ export default function PlanetsPage ({
         }))
     }
 
-    async function handleSend(spacecraftId, planetId) {
-        await onSendSpacecraftToPlanet(spacecraftId, planetId);
-    
+  
+async function handleSend(spacecraftId, planetId) {
+  console.log("Planets PAGE SEND:", {spacecraftId, planetId});
+  //const spacecraftId = selectByPlanet[planetId];
+  if (!spacecraftId) return;
 
-    setSelectByPlanet((prev) => ({
-        ...prev,
-        [planetId]:"",
-    }))
+  await onSendSpacecraftToPlanet(spacecraftId, planetId);
+
+  setSelectByPlanet((prev) => ({
+    ...prev,
+    [planetId]: "",
+  }));
+
+
+const sc = spacecrafts.find(sc => String(sc.id) === String(spacecraftId));
+if (sc && String(sc.currentLocation) === String(planetId)) return;
 }
 
     if (error) return <div>Error:{String(error)}</div>
@@ -52,6 +61,7 @@ export default function PlanetsPage ({
               selectedSpacecraftId={selectByPlanet[planet.id] || ""}
               onSelectSpacecraft={handleSelect}
               onSendSpacecraft={handleSend}
+              isLoading={isLoading}
             />
           );
         })}

@@ -1,9 +1,19 @@
 import { Link } from 'react-router-dom';
 import styles from './SpacecraftsPage.module.css';
 
-export default function SpacecraftsPage ({ spacecrafts = [], 
-    onDestroySpacecraft, error }) {
-        if (error) return <div>Error: {String(error)}</div> 
+export default function SpacecraftsPage ({ 
+  spacecrafts = [], 
+  onDestroySpacecraft,
+  error,
+  isLoading
+}) 
+
+{ 
+    if (isLoading) return <div>Loading...</div>;
+    onDestroySpacecraft, error 
+    
+    
+      if (error) return <div>Error: {String(error)}</div> 
   
       return (
         <main className={styles.page}>
@@ -29,9 +39,11 @@ export default function SpacecraftsPage ({ spacecrafts = [],
                 <button 
                 className={styles.destroy}
                 onClick={() => onDestroySpacecraft(spacecraft.id)}
+                disabled={isLoading}
                 >
-                Destroy
-                  </button>
+                {isLoading ? "Removing..." : "Destroy"}
+                </button>
+
                  </div>
                 </li>
                ))}
